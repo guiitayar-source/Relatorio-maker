@@ -18,27 +18,33 @@ export interface Medicamento {
 
 export interface LMEData {
   cnes: string;
+  estabelecimento: string;
   nomePaciente: string;
   peso: string;
   altura: string;
   nomeMae: string;
   medicamentos: Medicamento[];
-  cid10: string;
-  diagnostico: string;
+  cid_diagnostico: string;
   anamnese: string;
   tratamentoPrevio: string;
   capacidade: string;
   medicoSolicitanteId: string;
 }
 
+export interface LmeModelo {
+  id: string;
+  nome: string;
+  criadoEm: string;
+  dados: LMEData;
+}
+
 export interface RelatorioData {
   paciente: string;
   dataNascimento: string;
   dataLaudo: string;
-  cid10: string;
-  diagnostico: string;
+  cid_diagnostico: string;
   conteudo: string;
-  medicoId: string;
+  medicoSolicitanteId: string;
 }
 
 export interface ModeloRelatorio {

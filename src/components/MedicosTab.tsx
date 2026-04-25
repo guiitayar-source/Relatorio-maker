@@ -1,31 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import type { Medico } from '@/types';
 import { UserPlus, Pencil, Trash2, Users, X, Check, Stethoscope } from 'lucide-react';
+import { useMedicos } from '@/hooks/useMedicos';
 
 interface MedicosTabProps {
   medicos: Medico[];
   setMedicos: (value: Medico[] | ((prev: Medico[]) => Medico[])) => void;
 }
 
-const emptyMedico = (): Omit<Medico, 'id'> => ({
-  nomeCompleto: '',
-  crm: '',
-  cns: '',
-  cpf: '',
-});
-
 export function MedicosTab({ medicos, setMedicos }: MedicosTabProps) {
-  const [formData, setFormData] = useState(emptyMedico());
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  function updateField(field: keyof Omit<Medico, 'id'>, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
+  const {
+    formData,
+    editingId,
+    showForm,
+    setShowForm,
+    updateField,
+    handleSave,
+    handleEdit,
+    handleDelete,
+    resetForm,
+  } = useMedicos(medicos, setMedicos);
 
   function formatCPF(value: string): string {
     const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -33,46 +31,6 @@ export function MedicosTab({ medicos, setMedicos }: MedicosTabProps) {
     if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
     if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-  }
-
-  function handleSave() {
-    if (!formData.nomeCompleto.trim() || !formData.crm.trim()) return;
-
-    if (editingId) {
-      setMedicos((prev: Medico[]) =>
-        prev.map((m) => (m.id === editingId ? { ...m, ...formData } : m))
-      );
-    } else {
-      const newMedico: Medico = {
-        id: `med-${Date.now()}`,
-        ...formData,
-      };
-      setMedicos((prev: Medico[]) => [...prev, newMedico]);
-    }
-
-    resetForm();
-  }
-
-  function handleEdit(medico: Medico) {
-    setFormData({
-      nomeCompleto: medico.nomeCompleto,
-      crm: medico.crm,
-      cns: medico.cns,
-      cpf: medico.cpf,
-    });
-    setEditingId(medico.id);
-    setShowForm(true);
-  }
-
-  function handleDelete(id: string) {
-    setMedicos((prev: Medico[]) => prev.filter((m) => m.id !== id));
-    if (editingId === id) resetForm();
-  }
-
-  function resetForm() {
-    setFormData(emptyMedico());
-    setEditingId(null);
-    setShowForm(false);
   }
 
   return (

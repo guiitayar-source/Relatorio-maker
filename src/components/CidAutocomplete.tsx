@@ -6,7 +6,7 @@ import type { CID10 } from '@/types';
 
 interface CidAutocompleteProps {
   value: string;
-  onChange: (codigo: string, diagnostico: string) => void;
+  onChange: (value: string) => void;
   id?: string;
 }
 
@@ -35,6 +35,7 @@ export function CidAutocomplete({ value, onChange, id }: CidAutocompleteProps) {
     const val = e.target.value;
     setQuery(val);
     setHighlightIndex(-1);
+    onChange(val); // Permite edição manual direta
 
     if (val.length > 0) {
       const filtered = CID10_MOCK.filter(
@@ -47,14 +48,14 @@ export function CidAutocomplete({ value, onChange, id }: CidAutocompleteProps) {
     } else {
       setResults([]);
       setIsOpen(false);
-      onChange('', '');
     }
   }
 
   function handleSelect(cid: CID10) {
-    setQuery(`${cid.codigo} - ${cid.nome}`);
+    const combined = `${cid.codigo} - ${cid.nome}`;
+    setQuery(combined);
     setIsOpen(false);
-    onChange(cid.codigo, cid.nome);
+    onChange(combined);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

@@ -1,1 +1,9 @@
 node_modules
+dist
+.env
+__pycache__/
+*.pyc
+scratch/
+antigravity_open.py
+open_browser_antigravity.py
+node_modules
