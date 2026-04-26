@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, PDFTextField, PDFDropdown, PDFForm, PDFFont, PDFPage } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
 import type { LMEData, Medico, RelatorioData } from '@/types';
+import { CLINIC_INFO, DOCUMENT_TITLES } from './constants';
 
 /**
  * Sanitiza nomes de arquivos para evitar caracteres inválidos
@@ -29,9 +30,110 @@ const savePdfFile = (pdfBytes: Uint8Array, fileName: string) => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  
-  console.log('Exportação concluída:', finalFileName);
 };
+
+const drawReportHeaderFooter = (pdf: jsPDF, logo1: Uint8Array, logo2: Uint8Array) => {
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  // Cabeçalho
+  pdf.addImage(logo1, 'PNG', 15, 8, 35, 22);
+  
+  pdf.setFont('helvetica', 'normal').setFontSize(14);
+  const clinicNameLines = pdf.splitTextToSize(CLINIC_INFO.NAME, 80);
+  pdf.text(clinicNameLines, pageWidth / 2, 18, { align: 'center' });
+  
+  pdf.addImage(logo2, 'PNG', pageWidth - 55, 8, 40, 28);
+
+  // Rodapé
+  const footerY = pageHeight - 30;
+  pdf.setDrawColor(0);
+  pdf.setLineWidth(0.2);
+  pdf.line(20, footerY, pageWidth - 20, footerY);
+  
+  pdf.setFont('helvetica', 'normal').setFontSize(10);
+  pdf.text('Assinatura/Carimbo', pageWidth - 20, footerY + 5, { align: 'right' });
+  
+  pdf.setFontSize(11);
+  pdf.text(CLINIC_INFO.ADDRESS, pageWidth / 2, footerY + 15, { align: 'center' });
+  pdf.setFontSize(12);
+  pdf.text(CLINIC_INFO.PHONE, pageWidth / 2, footerY + 22, { align: 'center' });
+};
+
+/**
+ * Gera e baixa o PDF de Relatório Médico
+ */
+export async function exportRelatorioToPdf(form: RelatorioData, selectedMedico?: Medico) {
+  console.log('Iniciando exportação Relatório...');
+  try {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const [logo1, logo2] = await Promise.all([
+      fetch(CLINIC_INFO.LOGOS.PRIMARY).then(r => r.arrayBuffer()).then(ab => new Uint8Array(ab)),
+      fetch(CLINIC_INFO.LOGOS.SECONDARY).then(r => r.arrayBuffer()).then(ab => new Uint8Array(ab))
+    ]);
+
+    const drawHFRenderer = () => drawReportHeaderFooter(doc, logo1, logo2);
+    drawHFRenderer();
+
+    let y = 45;
+    doc.setFont('helvetica', 'bold').setFontSize(16);
+    doc.text(DOCUMENT_TITLES.RELATORIO_MEDICO, pageWidth / 2, y, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal').setFontSize(11);
+    y += 15;
+
+    const addLine = (label: string, value: string) => {
+      if (y > pageHeight - 60) {
+        doc.addPage();
+        drawHFRenderer();
+        y = 45;
+      }
+      doc.setFont('helvetica', 'bold').text(`${label}: `, 20, y);
+      doc.setFont('helvetica', 'normal').text(value || '', 20 + doc.getTextWidth(`${label}: `), y);
+      y += 8;
+    };
+
+    addLine('Paciente', form.paciente || '___');
+    addLine('Data de Nascimento', form.dataNascimento ? new Date(form.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '___');
+    addLine('Data do Laudo', form.dataLaudo ? new Date(form.dataLaudo + 'T12:00:00').toLocaleDateString('pt-BR') : '___');
+    addLine('CID-10', form.cid_diagnostico || '___');
+    y += 5;
+
+    const lines = doc.splitTextToSize(form.conteudo || '', pageWidth - 40);
+    lines.forEach((line: string) => {
+      if (y > pageHeight - 50) {
+        doc.addPage();
+        drawHFRenderer();
+        y = 45;
+      }
+      doc.text(line, 20, y);
+      y += 6;
+    });
+
+    if (selectedMedico) {
+      if (y > pageHeight - 80) {
+        doc.addPage();
+        drawHFRenderer();
+        y = 60;
+      } else {
+        y += 15;
+      }
+      doc.text('_________________________________', pageWidth / 2, y, { align: 'center' });
+      doc.setFont('helvetica', 'bold').text(selectedMedico.nomeCompleto, pageWidth / 2, y + 7, { align: 'center' });
+      doc.setFont('helvetica', 'normal').text(`CRM: ${selectedMedico.crm}`, pageWidth / 2, y + 12, { align: 'center' });
+    }
+
+    const fileName = `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.pdf`;
+    const pdfBytes = new Uint8Array(doc.output('arraybuffer'));
+    savePdfFile(pdfBytes, fileName);
+  } catch (e) {
+    console.error('Erro ao exportar Relatório:', e);
+    alert('Erro ao gerar PDF do relatório.');
+  }
+}
 
 // --- PDF Helpers ---
 
@@ -205,51 +307,6 @@ export async function debugLmeFields() {
     savePdfFile(pdfBytes, 'LME_DEBUG_FIELDS.pdf');
   } catch (e) {
     console.error('Erro no debug:', e);
-  }
-}
-
-/**
- * Gera e baixa o PDF de Relatório Médico
- */
-export function exportRelatorioToPdf(form: RelatorioData, selectedMedico?: Medico) {
-  console.log('Iniciando exportação Relatório...');
-  try {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 25;
-
-    doc.setFont('helvetica', 'bold').setFontSize(14);
-    doc.text('RELATÓRIO MÉDICO', pageWidth / 2, y, { align: 'center' });
-    
-    doc.setFont('helvetica', 'normal').setFontSize(10);
-    y += 15;
-
-    const addLine = (label: string, value: string) => {
-      doc.setFont('helvetica', 'bold').text(`${label}: `, 20, y);
-      doc.setFont('helvetica', 'normal').text(value || '', 20 + doc.getTextWidth(`${label}: `), y);
-      y += 7;
-    };
-
-    addLine('Paciente', form.paciente);
-    addLine('CID-10', form.cid_diagnostico || '');
-    y += 5;
-
-    const lines = doc.splitTextToSize(form.conteudo || '', pageWidth - 40);
-    doc.text(lines, 20, y);
-
-    if (selectedMedico) {
-      y = 260;
-      doc.text('_________________________________', pageWidth / 2, y, { align: 'center' });
-      doc.setFont('helvetica', 'bold').text(selectedMedico.nomeCompleto, pageWidth / 2, y + 7, { align: 'center' });
-      doc.setFont('helvetica', 'normal').text(`CRM: ${selectedMedico.crm}`, pageWidth / 2, y + 12, { align: 'center' });
-    }
-
-    const fileName = `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.pdf`;
-    const pdfBytes = new Uint8Array(doc.output('arraybuffer'));
-    savePdfFile(pdfBytes, fileName);
-  } catch (e) {
-    console.error('Erro ao exportar Relatório:', e);
-    alert('Erro ao gerar PDF do relatório.');
   }
 }
 

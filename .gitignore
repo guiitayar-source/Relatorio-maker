@@ -1,9 +1,11 @@
 node_modules
 dist
+release
+*.tsbuildinfo
+temp_docx
 .env
 __pycache__/
 *.pyc
 scratch/
 antigravity_open.py
 open_browser_antigravity.py
-node_modules

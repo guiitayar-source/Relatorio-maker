@@ -1,23 +1,114 @@
 import type { CID10, ModeloRelatorio } from '../types';
 
 export const CID10_MOCK: CID10[] = [
+  // F00-F09: Transtornos mentais orgânicos
+  { codigo: 'F00', nome: 'Demência na doença de Alzheimer' },
+  { codigo: 'F01', nome: 'Demência vascular' },
+  { codigo: 'F03', nome: 'Demência não especificada' },
+  { codigo: 'F05', nome: 'Delirium não sobreposto a uma demência' },
+  { codigo: 'F06.3', nome: 'Transtornos do humor [afetivos] orgânicos' },
+  
+  // F10-F19: Transtornos por uso de substâncias
+  { codigo: 'F10.0', nome: 'Transtornos mentais e comportamentais devidos ao uso de álcool - intoxicação aguda' },
+  { codigo: 'F10.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de álcool - síndrome de dependência' },
+  { codigo: 'F11.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de opiáceos - síndrome de dependência' },
+  { codigo: 'F12.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de canabinóides - síndrome de dependência' },
+  { codigo: 'F13.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de sedativos ou hipnóticos - dependência' },
+  { codigo: 'F14.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de cocaína - síndrome de dependência' },
+  { codigo: 'F15.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de outros estimulantes - dependência' },
+  { codigo: 'F17.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de fumo - síndrome de dependência' },
+  { codigo: 'F19.2', nome: 'Transtornos mentais e comportamentais devidos ao uso de múltiplas drogas - dependência' },
+
+  // F20-F29: Esquizofrenia e transtornos delirantes
   { codigo: 'F20.0', nome: 'Esquizofrenia paranóide' },
   { codigo: 'F20.1', nome: 'Esquizofrenia hebefrênica' },
+  { codigo: 'F20.2', nome: 'Esquizofrenia catatônica' },
+  { codigo: 'F20.3', nome: 'Esquizofrenia indiferenciada' },
   { codigo: 'F20.5', nome: 'Esquizofrenia residual' },
+  { codigo: 'F20.6', nome: 'Esquizofrenia simples' },
+  { codigo: 'F21', nome: 'Transtorno esquizotípico' },
+  { codigo: 'F22.0', nome: 'Transtorno delirante' },
+  { codigo: 'F23', nome: 'Transtornos psicóticos agudos e transitórios' },
   { codigo: 'F25.0', nome: 'Transtorno esquizoafetivo tipo maníaco' },
   { codigo: 'F25.1', nome: 'Transtorno esquizoafetivo tipo depressivo' },
+  { codigo: 'F25.2', nome: 'Transtorno esquizoafetivo tipo misto' },
+  { codigo: 'F29', nome: 'Psicose não-orgânica não especificada' },
+
+  // F30-F39: Transtornos do humor [afetivos]
+  { codigo: 'F30', nome: 'Episódio maníaco' },
   { codigo: 'F31.0', nome: 'Transtorno afetivo bipolar, episódio atual hipomaníaco' },
   { codigo: 'F31.1', nome: 'Transtorno afetivo bipolar, episódio atual maníaco sem sintomas psicóticos' },
+  { codigo: 'F31.2', nome: 'Transtorno afetivo bipolar, episódio atual maníaco com sintomas psicóticos' },
+  { codigo: 'F31.3', nome: 'Transtorno afetivo bipolar, episódio atual depressivo leve ou moderado' },
+  { codigo: 'F31.4', nome: 'Transtorno afetivo bipolar, episódio atual depressivo grave sem sintomas psicóticos' },
+  { codigo: 'F31.5', nome: 'Transtorno afetivo bipolar, episódio atual depressivo grave com sintomas psicóticos' },
+  { codigo: 'F31.6', nome: 'Transtorno afetivo bipolar, episódio atual misto' },
+  { codigo: 'F31.7', nome: 'Transtorno afetivo bipolar, atualmente em remissão' },
+  { codigo: 'F31.8', nome: 'Outros transtornos afetivos bipolares' },
   { codigo: 'F31.9', nome: 'Transtorno afetivo bipolar, não especificado' },
   { codigo: 'F32.0', nome: 'Episódio depressivo leve' },
   { codigo: 'F32.1', nome: 'Episódio depressivo moderado' },
   { codigo: 'F32.2', nome: 'Episódio depressivo grave sem sintomas psicóticos' },
+  { codigo: 'F32.3', nome: 'Episódio depressivo grave com sintomas psicóticos' },
   { codigo: 'F33.0', nome: 'Transtorno depressivo recorrente, episódio atual leve' },
   { codigo: 'F33.1', nome: 'Transtorno depressivo recorrente, episódio atual moderado' },
+  { codigo: 'F33.2', nome: 'Transtorno depressivo recorrente, episódio atual grave sem sintomas psicóticos' },
+  { codigo: 'F33.3', nome: 'Transtorno depressivo recorrente, episódio atual grave com sintomas psicóticos' },
+  { codigo: 'F34.0', nome: 'Ciclotimia' },
+  { codigo: 'F34.1', nome: 'Distimia' },
+
+  // F40-F48: Transtornos neuróticos e relacionados ao estresse
+  { codigo: 'F40.0', nome: 'Agorafobia' },
+  { codigo: 'F40.1', nome: 'Fobias sociais' },
   { codigo: 'F41.0', nome: 'Transtorno de pânico' },
   { codigo: 'F41.1', nome: 'Ansiedade generalizada' },
+  { codigo: 'F41.2', nome: 'Transtorno misto ansioso e depressivo' },
   { codigo: 'F42.0', nome: 'Transtorno obsessivo-compulsivo' },
+  { codigo: 'F43.0', nome: 'Reação aguda ao estresse' },
+  { codigo: 'F43.1', nome: 'Transtorno de estresse pós-traumático' },
+  { codigo: 'F43.2', nome: 'Transtornos de adaptação' },
+  { codigo: 'F44', nome: 'Transtornos dissociativos [de conversão]' },
+  { codigo: 'F45', nome: 'Transtornos somatoformes' },
+  { codigo: 'F48.0', nome: 'Neurastenia' },
+
+  // F50-F59: Síndromes comportamentais associadas a fatores físicos
+  { codigo: 'F50.0', nome: 'Anorexia nervosa' },
+  { codigo: 'F50.2', nome: 'Bulimia nervosa' },
+  { codigo: 'F51.0', nome: 'Insônia não-orgânica' },
+  { codigo: 'F53.0', nome: 'Transtornos mentais e comportamentais leves associados ao puerpério' },
+
+  // F60-F69: Transtornos da personalidade e do comportamento adulto
+  { codigo: 'F60.0', nome: 'Transtorno da personalidade paranóide' },
+  { codigo: 'F60.1', nome: 'Transtorno da personalidade esquizóide' },
+  { codigo: 'F60.2', nome: 'Transtorno da personalidade antissocial' },
+  { codigo: 'F60.3', nome: 'Transtorno da personalidade emocionalmente instável' },
+  { codigo: 'F60.31', nome: 'Transtorno da personalidade tipo borderline' },
+  { codigo: 'F60.4', nome: 'Transtorno da personalidade histriônica' },
+  { codigo: 'F60.5', nome: 'Transtorno da personalidade anancástica' },
+  { codigo: 'F60.6', nome: 'Transtorno da personalidade ansiosa [esquiva]' },
+  { codigo: 'F60.7', nome: 'Transtorno da personalidade dependente' },
+
+  // F70-F79: Retardo mental
+  { codigo: 'F70', nome: 'Retardo mental leve' },
+  { codigo: 'F71', nome: 'Retardo mental moderado' },
+  { codigo: 'F72', nome: 'Retardo mental grave' },
+  { codigo: 'F73', nome: 'Retardo mental profundo' },
+
+  // F80-F89: Transtornos do desenvolvimento psicológico
+  { codigo: 'F80', nome: 'Transtornos específicos do desenvolvimento da fala e da linguagem' },
+  { codigo: 'F81', nome: 'Transtornos específicos do desenvolvimento das habilidades escolares' },
   { codigo: 'F84.0', nome: 'Autismo infantil' },
+  { codigo: 'F84.1', nome: 'Autismo atípico' },
+  { codigo: 'F84.2', nome: 'Síndrome de Rett' },
+  { codigo: 'F84.5', nome: 'Síndrome de Asperger' },
+
+  // F90-F98: Transtornos do comportamento e emocionais (infância/adolescência)
+  { codigo: 'F90.0', nome: 'Distúrbios da atividade e da atenção (TDAH)' },
+  { codigo: 'F90.1', nome: 'Transtorno hipercinético de conduta' },
+  { codigo: 'F91', nome: 'Distúrbios de conduta' },
+  { codigo: 'F92', nome: 'Transtornos mistos de conduta e das emoções' },
+  { codigo: 'F93', nome: 'Transtornos emocionais com início específico na infância' },
+  { codigo: 'F95', nome: 'Tiques' },
 ];
 
 export const MODELOS_INICIAIS: ModeloRelatorio[] = [

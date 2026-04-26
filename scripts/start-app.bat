@@ -1,0 +1,3 @@
+@echo off
+echo Iniciando Relatorio Maker...
+npm run electron:dev

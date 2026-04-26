@@ -31,7 +31,7 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
     handleSaveModelo,
   } = useRelatorioForm();
 
-  const selectedMedico = medicos.find((m) => m.id === form.medicoId);
+  const selectedMedico = medicos.find((m) => m.id === form.medicoSolicitanteId);
 
   return (
     <div className="animate-fade-in">
@@ -83,7 +83,7 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
               <div className="space-y-2">
                 <Label>CID-10</Label>
                 <CidAutocomplete
-                  value={form.cid10 ? `${form.cid10} - ${form.diagnostico}` : ''}
+                  value={form.cid_diagnostico}
                   onChange={handleCidChange}
                 />
               </div>
@@ -91,8 +91,8 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
               <MedicoSelector
                 id="rel-medico"
                 medicos={medicos}
-                selectedId={form.medicoId}
-                onChange={(id) => updateField('medicoId', id)}
+                selectedId={form.medicoSolicitanteId}
+                onChange={(id) => updateField('medicoSolicitanteId', id)}
                 label="Médico Responsável"
               />
 

@@ -25,6 +25,8 @@ export interface LMEData {
   nomeMae: string;
   medicamentos: Medicamento[];
   cid_diagnostico: string;
+  cid10?: string;
+  diagnostico?: string;
   anamnese: string;
   tratamentoPrevio: string;
   capacidade: string;
@@ -43,8 +45,11 @@ export interface RelatorioData {
   dataNascimento: string;
   dataLaudo: string;
   cid_diagnostico: string;
+  cid10?: string;
+  diagnostico?: string;
   conteudo: string;
   medicoSolicitanteId: string;
+  medicoId?: string;
 }
 
 export interface ModeloRelatorio {

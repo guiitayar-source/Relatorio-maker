@@ -48,8 +48,7 @@ export function PdfPreview({ form, selectedMedico }: PdfPreviewProps) {
             </tbody>
           </table>
           <div className="space-y-1 mb-4">
-            <p><strong>CID-10:</strong> {form.cid10 || '___'}</p>
-            <p><strong>Diagnóstico:</strong> {form.diagnostico || '___'}</p>
+            <p><strong>CID e Diagnóstico:</strong> {form.cid_diagnostico || '___'}</p>
           </div>
           <div className="mb-3">
             <p className="font-bold mb-1">Anamnese:</p>

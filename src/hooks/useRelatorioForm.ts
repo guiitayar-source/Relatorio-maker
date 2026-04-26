@@ -15,8 +15,8 @@ export function useRelatorioForm() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleCidChange(codigo: string, diagnostico: string) {
-    setForm((prev) => ({ ...prev, cid10: codigo, diagnostico }));
+  function handleCidChange(value: string) {
+    setForm((prev) => ({ ...prev, cid_diagnostico: value }));
   }
 
   function handleModeloSelect(modeloId: string) {
