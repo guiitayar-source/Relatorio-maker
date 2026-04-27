@@ -238,10 +238,105 @@ export async function exportRelatorioToDocx(form: RelatorioData, selectedMedico?
     });
 
     const blob = await Packer.toBlob(docFile);
-    saveAs(blob, `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.docx`);
+    const fileName = `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.docx`;
+    
+    if (window.electronAPI && window.electronAPI.saveFile) {
+      const buffer = await blob.arrayBuffer();
+      const success = await window.electronAPI.saveFile(buffer, fileName);
+      if (!success) {
+        console.log('Salvamento DOCX cancelado ou falhou.');
+      }
+    } else {
+      saveAs(blob, fileName);
+    }
     console.log('Exportação Relatório DOCX concluída com sucesso.');
   } catch (error) {
     console.error('Erro ao gerar DOCX do Relatório:', error);
     alert('Erro ao gerar o DOCX do Relatório. Verifique o console para mais detalhes.');
   }
+}
+
+export async function generateRelatorioDocxBlob(form: RelatorioData, selectedMedico?: Medico): Promise<Blob> {
+  const [logo1, logo2] = await Promise.all([
+    getImageData(CLINIC_INFO.LOGOS.PRIMARY),
+    getImageData(CLINIC_INFO.LOGOS.SECONDARY)
+  ]);
+
+  const children = [
+    new Paragraph({
+      text: DOCUMENT_TITLES.RELATORIO_MEDICO,
+      heading: HeadingLevel.HEADING_1,
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 400, after: 600 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'Paciente: ', bold: true }),
+        new TextRun(form.paciente || '___'),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'Data de Nascimento: ', bold: true }),
+        new TextRun(form.dataNascimento ? new Date(form.dataNascimento + 'T12:00:00').toLocaleDateString('pt-BR') : '___'),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'Data do Laudo: ', bold: true }),
+        new TextRun(form.dataLaudo ? new Date(form.dataLaudo + 'T12:00:00').toLocaleDateString('pt-BR') : '___'),
+      ],
+      spacing: { after: 100 },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'CID-10: ', bold: true }),
+        new TextRun(form.cid_diagnostico || '___'),
+      ],
+      spacing: { after: 300 },
+    }),
+  ];
+
+  const contentLines = (form.conteudo || '').split('\n');
+  contentLines.forEach((line) => {
+    children.push(
+      new Paragraph({
+        text: line,
+        spacing: { after: 100 },
+        alignment: AlignmentType.JUSTIFIED,
+      })
+    );
+  });
+
+  if (selectedMedico) {
+    children.push(
+      new Paragraph({ text: '', spacing: { before: 600 } }),
+      new Paragraph({
+        text: '_________________________________',
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: selectedMedico.nomeCompleto, bold: true })],
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        text: `CRM: ${selectedMedico.crm}`,
+        alignment: AlignmentType.CENTER,
+      })
+    );
+  }
+
+  const docFile = new Document({
+    sections: [
+      {
+        headers: { default: createReportHeader(logo1, logo2) },
+        footers: { default: createReportFooter() },
+        children,
+      },
+    ],
+  });
+
+  return await Packer.toBlob(docFile);
 }

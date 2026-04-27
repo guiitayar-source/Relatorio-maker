@@ -2,20 +2,41 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save, FolderOpen, Trash2, BookmarkPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, FolderOpen, Trash2, BookmarkPlus, ChevronDown, ChevronUp, Cloud } from 'lucide-react';
 import type { LmeModelo } from '@/types';
+import type { GoogleDriveService } from '@/lib/google-utils';
 
 interface LmeModelosManagerProps {
   modelos: LmeModelo[];
   onSalvar: (nome: string) => void;
   onCarregar: (id: string) => void;
   onExcluir: (id: string) => void;
+  driveService?: GoogleDriveService | null;
 }
 
-export function LmeModelosManager({ modelos, onSalvar, onCarregar, onExcluir }: LmeModelosManagerProps) {
+export function LmeModelosManager({ modelos, onSalvar, onCarregar, onExcluir, driveService }: LmeModelosManagerProps) {
   const [nomeModelo, setNomeModelo] = useState('');
   const [expandido, setExpandido] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleBackupToDrive = async () => {
+    if (!driveService) return alert('Conecte-se ao Google Drive primeiro!');
+    setIsUploading(true);
+    try {
+      const jsonStr = JSON.stringify(modelos, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const fileName = `lme_modelos_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const folderId = await driveService.getOrCreateFolder('relatorios DC');
+      await driveService.uploadFile(blob, fileName, 'application/json', folderId);
+      alert('Backup de Modelos LME salvo no Drive com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar modelos no Drive.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSalvar = () => {
     const nome = nomeModelo.trim();
@@ -59,6 +80,22 @@ export function LmeModelosManager({ modelos, onSalvar, onCarregar, onExcluir }: 
 
       {expandido && (
         <CardContent className="p-4 pt-0 space-y-4 animate-fade-in">
+          {/* Backup Button se conectado */}
+          {driveService && (
+            <div className="flex justify-end mb-2 border-b pb-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBackupToDrive} 
+                disabled={isUploading || modelos.length === 0}
+                className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+              >
+                <Cloud className="h-3.5 w-3.5" />
+                {isUploading ? 'Salvando...' : 'Backup JSON no Drive'}
+              </Button>
+            </div>
+          )}
+
           {/* Salvar novo modelo */}
           <div className="flex gap-2">
             <Input

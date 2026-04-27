@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,15 +8,17 @@ import { CidAutocomplete } from '@/components/CidAutocomplete';
 import { MedicoSelector } from '@/components/MedicoSelector';
 import type { Medico } from '@/types';
 import { useRelatorioForm } from '@/hooks/useRelatorioForm';
-import { exportRelatorioToPdf } from '@/lib/pdf-utils';
-import { exportRelatorioToDocx } from '@/lib/docx-utils';
-import { Save, BookOpen, Download, FileText } from 'lucide-react';
+import { exportRelatorioToPdf, generateRelatorioPdfBlob, sanitizeFilename } from '@/lib/pdf-utils';
+import { exportRelatorioToDocx, generateRelatorioDocxBlob } from '@/lib/docx-utils';
+import { Save, BookOpen, Download, FileText, Cloud } from 'lucide-react';
+import type { GoogleDriveService } from '@/lib/google-utils';
 
 interface RelatoriosTabProps {
   medicos: Medico[];
+  driveService?: GoogleDriveService | null;
 }
 
-export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
+export function RelatoriosTab({ medicos, driveService }: RelatoriosTabProps) {
   const {
     form,
     modelos,
@@ -31,7 +33,63 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
     handleSaveModelo,
   } = useRelatorioForm();
 
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [isUploadingDocx, setIsUploadingDocx] = useState(false);
+  const [isUploadingBackup, setIsUploadingBackup] = useState(false);
+
   const selectedMedico = medicos.find((m) => m.id === form.medicoSolicitanteId);
+
+  const handleBackupToDrive = async () => {
+    if (!driveService) return alert('Conecte-se ao Google Drive primeiro!');
+    setIsUploadingBackup(true);
+    try {
+      const jsonStr = JSON.stringify(modelos, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const fileName = `relatorios_modelos_backup_${new Date().toISOString().split('T')[0]}.json`;
+      const folderId = await driveService.getOrCreateFolder('relatorios DC');
+      await driveService.uploadFile(blob, fileName, 'application/json', folderId);
+      alert('Backup de Modelos de Relatórios salvo no Drive com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar modelos no Drive.');
+    } finally {
+      setIsUploadingBackup(false);
+    }
+  };
+
+  const handleSavePdfToDrive = async () => {
+    if (!driveService) return alert('Conecte-se ao Google Drive primeiro!');
+    setIsUploadingPdf(true);
+    try {
+      const blob = await generateRelatorioPdfBlob(form, selectedMedico);
+      const fileName = `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.pdf`;
+      const folderId = await driveService.getOrCreateFolder('relatorios DC');
+      await driveService.uploadFile(blob, fileName, 'application/pdf', folderId);
+      alert('Relatório PDF salvo no Google Drive com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar PDF no Drive.');
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  };
+
+  const handleSaveDocxToDrive = async () => {
+    if (!driveService) return alert('Conecte-se ao Google Drive primeiro!');
+    setIsUploadingDocx(true);
+    try {
+      const blob = await generateRelatorioDocxBlob(form, selectedMedico);
+      const fileName = `Relatorio_${sanitizeFilename(form.paciente || 'documento')}.docx`;
+      const folderId = await driveService.getOrCreateFolder('relatorios DC');
+      await driveService.uploadFile(blob, fileName, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', folderId);
+      alert('Relatório DOCX salvo no Google Drive com sucesso!');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar DOCX no Drive.');
+    } finally {
+      setIsUploadingDocx(false);
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -116,10 +174,24 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
                     ))}
                   </select>
                 </div>
-                <Button variant="outline" size="sm" className="w-full" onClick={() => setShowSaveModal(true)}>
-                  <Save className="h-4 w-4" />
-                  Salvar como Novo Modelo
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowSaveModal(true)}>
+                    <Save className="h-4 w-4" />
+                    Salvar
+                  </Button>
+                  {driveService && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleBackupToDrive} 
+                      disabled={isUploadingBackup || modelos.length === 0}
+                      className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                    >
+                      <Cloud className="h-4 w-4" />
+                      Backup JSON
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -140,10 +212,32 @@ export function RelatoriosTab({ medicos }: RelatoriosTabProps) {
                   <Download className="h-4 w-4" />
                   Exportar PDF
                 </Button>
+                {driveService && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSavePdfToDrive} 
+                    disabled={isUploadingPdf}
+                    className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Cloud className="h-4 w-4" />
+                    {isUploadingPdf ? 'Salvando...' : 'Drive PDF'}
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => exportRelatorioToDocx(form, selectedMedico)} className="gap-2">
                   <FileText className="h-4 w-4" />
                   Exportar DOCX
                 </Button>
+                {driveService && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSaveDocxToDrive} 
+                    disabled={isUploadingDocx}
+                    className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Cloud className="h-4 w-4" />
+                    {isUploadingDocx ? 'Salvando...' : 'Drive DOCX'}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

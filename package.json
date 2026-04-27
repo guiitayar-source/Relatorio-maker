@@ -24,7 +24,10 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "public/**/*"
+      "public/**/*",
+      "google-credentials.json",
+      "chavegoogleapppc.json",
+      ".env.local"
     ],
     "win": {
       "target": "nsis",

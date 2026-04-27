@@ -4,15 +4,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import type { Medico } from '@/types';
-import { UserPlus, Pencil, Trash2, Users, X, Check, Stethoscope } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Users, X, Check, Stethoscope, Download, Upload, Cloud } from 'lucide-react';
 import { useMedicos } from '@/hooks/useMedicos';
+import { useRef } from 'react';
+import { GoogleDriveService } from '@/lib/google-utils';
 
 interface MedicosTabProps {
   medicos: Medico[];
   setMedicos: (value: Medico[] | ((prev: Medico[]) => Medico[])) => void;
+  driveService: GoogleDriveService | null;
 }
 
-export function MedicosTab({ medicos, setMedicos }: MedicosTabProps) {
+export function MedicosTab({ medicos, setMedicos, driveService }: MedicosTabProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     formData,
     editingId,
@@ -33,8 +37,95 @@ export function MedicosTab({ medicos, setMedicos }: MedicosTabProps) {
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
   }
 
+  const handleBackup = async () => {
+    if (medicos.length === 0) {
+      alert('Não há médicos cadastrados para fazer backup.');
+      return;
+    }
+
+    const data = JSON.stringify(medicos, null, 2);
+    const fileName = `backup_medicos_${new Date().toISOString().split('T')[0]}.json`;
+
+    if (window.electronAPI && window.electronAPI.saveFile) {
+      try {
+        const blob = new Blob([data], { type: 'application/json' });
+        const buffer = await blob.arrayBuffer();
+        const success = await window.electronAPI.saveFile(buffer, fileName);
+        if (success) alert('Backup salvo com sucesso!');
+      } catch (err) {
+        console.error('Erro ao salvar backup:', err);
+        alert('Erro ao salvar backup.');
+      }
+    } else {
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleDriveBackup = async () => {
+    if (!driveService) {
+      alert('Por favor, conecte ao Google Drive primeiro (no topo da tela).');
+      return;
+    }
+
+    if (medicos.length === 0) {
+      alert('Não há médicos cadastrados para fazer backup.');
+      return;
+    }
+
+    try {
+      const data = JSON.stringify(medicos, null, 2);
+      const fileName = `backup_medicos_${new Date().toISOString().split('T')[0]}.json`;
+      const blob = new Blob([data], { type: 'application/json' });
+      
+      const folderId = await driveService.getOrCreateFolder('MedDoc_Backups');
+      await driveService.uploadFile(blob, fileName, 'application/json', folderId);
+      
+      alert('Backup enviado com sucesso para a pasta "MedDoc_Backups" no seu Google Drive!');
+    } catch (err) {
+      console.error('Erro no backup para o Drive:', err);
+      alert('Erro ao enviar backup para o Google Drive.');
+    }
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        if (Array.isArray(json)) {
+          if (confirm(`Deseja importar ${json.length} médicos? Isso substituirá a lista atual.`)) {
+            setMedicos(json);
+            alert('Médicos importados com sucesso!');
+          }
+        } else {
+          alert('Arquivo inválido. O backup deve ser um array de médicos.');
+        }
+      } catch (err) {
+        alert('Erro ao processar o arquivo JSON.');
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImport}
+        accept=".json"
+        className="hidden"
+      />
       <Card className="border-0 shadow-lg">
         <CardHeader className="gradient-header rounded-t-xl">
           <div className="flex items-center justify-between">
@@ -42,17 +133,51 @@ export function MedicosTab({ medicos, setMedicos }: MedicosTabProps) {
               <Users className="h-5 w-5" />
               Cadastro de Médicos
             </CardTitle>
-            {!showForm && (
+            <div className="flex items-center gap-2">
+              {driveService && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleDriveBackup}
+                  className="gap-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border-0"
+                  title="Salvar backup no Google Drive"
+                >
+                  <Cloud className="h-4 w-4" />
+                  Backup Drive
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setShowForm(true)}
+                onClick={() => fileInputRef.current?.click()}
                 className="gap-1"
+                title="Restaurar de um arquivo JSON"
               >
-                <UserPlus className="h-4 w-4" />
-                Novo Médico
+                <Upload className="h-4 w-4" />
+                Importar
               </Button>
-            )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleBackup}
+                className="gap-1"
+                title="Exportar dados para JSON"
+              >
+                <Download className="h-4 w-4" />
+                Backup
+              </Button>
+              {!showForm && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowForm(true)}
+                  className="gap-1"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Novo Médico
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
